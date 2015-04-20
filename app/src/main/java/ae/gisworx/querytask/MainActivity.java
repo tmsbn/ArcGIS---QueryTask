@@ -19,6 +19,7 @@ import com.esri.android.map.MapView;
 import com.esri.android.map.event.OnSingleTapListener;
 import com.esri.android.map.event.OnStatusChangedListener;
 import com.esri.android.map.osm.OpenStreetMapLayer;
+import com.esri.core.geometry.Envelope;
 import com.esri.core.geometry.Point;
 import com.esri.core.io.EsriSecurityException;
 import com.esri.core.map.CallbackListener;
@@ -98,6 +99,8 @@ public class MainActivity extends ActionBarActivity implements OnStatusChangedLi
                     String whereClause = searchEt.getText().toString();
                     whereClause = whereClause.toUpperCase(Locale.ENGLISH);
 
+
+                    //set query parameters
                     QueryParameters queryParameters = new QueryParameters();
                     queryParameters.setWhere("POI_NAME_EN like '%" + whereClause + "%'");
                     queryParameters.setOutSpatialReference(mMapView.getSpatialReference());
@@ -122,6 +125,7 @@ public class MainActivity extends ActionBarActivity implements OnStatusChangedLi
 
                             if (results != null) {
 
+                                //remove the previous results from the graphics layer
                                 graphicsLayer.removeAll();
                                 List<Point> pointList = new ArrayList<>();
 
@@ -145,7 +149,11 @@ public class MainActivity extends ActionBarActivity implements OnStatusChangedLi
                                     //calculate and set the extent to cover all the results
                                 }
 
-                                mMapView.setExtent(Constants.calculateEnvelope(pointList), getResources().getDimensionPixelSize(R.dimen.map_padding));
+                                //Calculate the envelope that covers all the points from the results
+                                Envelope pointEnvelope= calculateEnvelope(pointList);
+
+                                //set the extent to the map
+                                mMapView.setExtent(pointEnvelope,getResources().getDimensionPixelSize(R.dimen.map_padding));
 
 
                             }
@@ -285,6 +293,33 @@ public class MainActivity extends ActionBarActivity implements OnStatusChangedLi
             Toast.makeText(this, "Tapped on map", Toast.LENGTH_SHORT).show();
 
         }
+
+    }
+
+    public static Envelope calculateEnvelope(List<Point> pointList) {
+
+        double yMin = Double.MAX_VALUE;
+        double yMax = Double.MIN_VALUE;
+
+        double xMin = Double.MAX_VALUE;
+        double xMax = Double.MIN_VALUE;
+
+        for (Point point : pointList) {
+
+            if (point.getX() < xMin)
+                xMin = point.getX();
+
+            if (point.getY() < yMin)
+                yMin = point.getY();
+
+            if (point.getX() > xMax)
+                xMax = point.getX();
+
+            if (point.getY() > yMax)
+                yMax = point.getY();
+        }
+
+        return new Envelope(xMin, yMin, xMax, yMax);
 
     }
 }
